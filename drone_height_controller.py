@@ -2,7 +2,7 @@
 """
 Real-time Drone Height Controller for Crop Quality Analysis
 Provides immediate height adjustment commands for drone control system
-Optimized for Raspberry Pi with Webcam (Pi Camera code commented for future use)
+Optimized for Raspberry Pi with USB Webcam
 """
 
 import cv2
@@ -13,43 +13,26 @@ from datetime import datetime
 import os
 import sys
 
-# Try to import PiCamera2, fallback to regular OpenCV
-try:
-    from picamera2 import Picamera2
-    PICAMERA_AVAILABLE = True
-except ImportError:
-    PICAMERA_AVAILABLE = False
-    print("Warning: PiCamera2 not available, using regular OpenCV camera")
-
 class DroneHeightController:
-    def __init__(self, crop_type="general", weather_condition="clear", use_webcam=True, show_ui=True):
+    def __init__(self, crop_type="general", weather_condition="clear", show_ui=True):
         self.crop_type = crop_type
         self.weather_condition = weather_condition
         self.current_height = 3.0  # meters
         self.frame_count = 0
         self.last_command_time = 0
         self.command_interval = 2.0  # seconds between commands
-        self.use_webcam = use_webcam
         self.show_ui = show_ui
-        self.setup_camera()
+        self.setup_webcam()
         self.setup_analysis_parameters()
         
-    def setup_camera(self):
-        """Setup camera for real-time analysis"""
-        if self.use_webcam:
-            self.setup_webcam()
-        elif PICAMERA_AVAILABLE:
-            self.setup_picamera()
-        else:
-            self.setup_webcam()
-    
     def setup_webcam(self):
         """Setup USB webcam for optimal performance"""
+        print("🔌 Setting up webcam...")
         self.cap = cv2.VideoCapture(0)
         
         if not self.cap.isOpened():
-            print("Error: Could not open webcam")
-            print("Trying alternative camera index...")
+            print("Error: Could not open webcam at index 0")
+            print("Trying alternative camera indices...")
             # Try different camera indices
             for i in range(1, 4):
                 self.cap = cv2.VideoCapture(i)
@@ -58,6 +41,8 @@ class DroneHeightController:
                     break
             else:
                 print("❌ No webcam found. Please check connection.")
+                print("Available video devices:")
+                os.system("ls /dev/video* 2>/dev/null || echo 'No video devices found'")
                 sys.exit(1)
         
         # Set camera properties for optimal performance
@@ -75,28 +60,6 @@ class DroneHeightController:
         else:
             print("❌ Failed to capture test frame from webcam")
             sys.exit(1)
-    
-    def setup_picamera(self):
-        """Setup Pi Camera with optimal settings (commented for future use)"""
-        """
-        # Pi Camera setup code - uncomment when Pi Camera is available
-        try:
-            self.picam2 = Picamera2()
-            config = self.picam2.create_preview_configuration(
-                main={"size": (1280, 720), "format": "RGB888"},
-                controls={"FrameDurationLimits": (33333, 33333)}
-            )
-            self.picam2.configure(config)
-            self.picam2.start()
-            time.sleep(1)
-            print("✓ Pi Camera initialized")
-        except Exception as e:
-            print(f"Pi Camera error: {e}")
-            print("Falling back to webcam...")
-            self.setup_webcam()
-        """
-        print("Pi Camera setup commented - using webcam instead")
-        self.setup_webcam()
     
     def setup_analysis_parameters(self):
         """Setup crop-specific analysis parameters"""
@@ -120,55 +83,17 @@ class DroneHeightController:
         self.weather = self.weather_adjustments.get(self.weather_condition, self.weather_adjustments["clear"])
     
     def capture_frame(self):
-        """Capture frame from camera"""
+        """Capture frame from webcam"""
         try:
-            if hasattr(self, 'picam2'):
-                # Pi Camera capture (commented for future use)
-                """
-                frame = self.picam2.capture_array()
-                if len(frame.shape) == 3:
-                    frame = cv2.cvtColor(frame, cv2.COLOR_RGB2BGR)
+            ret, frame = self.cap.read()
+            if ret:
                 return frame
-                """
+            else:
+                print("Warning: Failed to capture frame from webcam")
                 return None
-            elif hasattr(self, 'cap'):
-                ret, frame = self.cap.read()
-                if ret:
-                    return frame
-                else:
-                    print("Warning: Failed to capture frame from webcam")
-                    return None
         except Exception as e:
             print(f"Frame capture error: {e}")
             return None
-    
-    def analyze_frame_quality(self, frame):
-        """Quick quality analysis for real-time drone control"""
-        gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
-        hsv = cv2.cvtColor(frame, cv2.COLOR_BGR2HSV)
-        
-        # Brightness analysis
-        brightness = np.mean(gray)
-        brightness_threshold = 120 * self.weather["brightness_mult"]
-        
-        # Sharpness analysis (critical for height decisions)
-        laplacian = cv2.Laplacian(gray, cv2.CV_64F)
-        sharpness = laplacian.var()
-        sharpness_threshold = 80 * self.weather["contrast_mult"]
-        
-        # Crop coverage analysis
-        lower_green = np.array(self.params["green_range"][:3])
-        upper_green = np.array(self.params["green_range"][3:])
-        mask = cv2.inRange(hsv, lower_green, upper_green)
-        green_ratio = np.sum(mask > 0) / (mask.shape[0] * mask.shape[1])
-        
-        return {
-            "brightness": brightness,
-            "sharpness": sharpness,
-            "green_coverage": green_ratio,
-            "brightness_threshold": brightness_threshold,
-            "sharpness_threshold": sharpness_threshold
-        }
     
     def display_ui(self, frame, analysis, command):
         """Display analysis results on frame with UI overlay"""
@@ -207,7 +132,7 @@ class DroneHeightController:
                    (10, 110), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (255, 255, 255), 1)
         cv2.putText(frame, f"Weather: {self.weather_condition.title()}", 
                    (10, 130), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (255, 255, 255), 1)
-        cv2.putText(frame, f"Camera: Webcam", 
+        cv2.putText(frame, f"Camera: USB Webcam", 
                    (10, 150), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (255, 255, 255), 1)
         
         # Display metrics
@@ -264,6 +189,34 @@ class DroneHeightController:
         scores.append(coverage_score * 0.3)
         
         return sum(scores)
+    
+    def analyze_frame_quality(self, frame):
+        """Quick quality analysis for real-time drone control"""
+        gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
+        hsv = cv2.cvtColor(frame, cv2.COLOR_BGR2HSV)
+        
+        # Brightness analysis
+        brightness = np.mean(gray)
+        brightness_threshold = 120 * self.weather["brightness_mult"]
+        
+        # Sharpness analysis (critical for height decisions)
+        laplacian = cv2.Laplacian(gray, cv2.CV_64F)
+        sharpness = laplacian.var()
+        sharpness_threshold = 80 * self.weather["contrast_mult"]
+        
+        # Crop coverage analysis
+        lower_green = np.array(self.params["green_range"][:3])
+        upper_green = np.array(self.params["green_range"][3:])
+        mask = cv2.inRange(hsv, lower_green, upper_green)
+        green_ratio = np.sum(mask > 0) / (mask.shape[0] * mask.shape[1])
+        
+        return {
+            "brightness": brightness,
+            "sharpness": sharpness,
+            "green_coverage": green_ratio,
+            "brightness_threshold": brightness_threshold,
+            "sharpness_threshold": sharpness_threshold
+        }
     
     def get_height_command(self, analysis):
         """Generate immediate height adjustment command"""
@@ -333,7 +286,7 @@ class DroneHeightController:
             },
             "crop_type": self.crop_type,
             "weather": self.weather_condition,
-            "camera_type": "webcam" if self.use_webcam else "picamera"
+            "camera_type": "webcam"
         }
         
         # Update current height
@@ -374,7 +327,7 @@ class DroneHeightController:
         print(f"Starting Drone Height Controller")
         print(f"Crop Type: {self.crop_type}")
         print(f"Weather: {self.weather_condition}")
-        print(f"Camera: {'Webcam' if self.use_webcam else 'Pi Camera'}")
+        print(f"Camera: USB Webcam")
         print(f"UI Display: {'Enabled' if self.show_ui else 'Disabled'}")
         print(f"Duration: {duration_minutes} minutes")
         print(f"Command Interval: {self.command_interval} seconds")
@@ -430,8 +383,6 @@ class DroneHeightController:
     
     def cleanup(self):
         """Cleanup resources"""
-        if hasattr(self, 'picam2'):
-            self.picam2.stop()
         if hasattr(self, 'cap'):
             self.cap.release()
         cv2.destroyAllWindows()
@@ -440,15 +391,13 @@ def main():
     """Main function"""
     print("Drone Height Controller for Crop Quality Analysis")
     print("=" * 55)
+    print("📹 USB Webcam Version")
+    print("=" * 55)
     
     # Get configuration
     crop_type = input("Enter crop type (wheat/corn/rice/cotton/general): ").lower() or "general"
     weather = input("Enter weather (clear/cloudy/overcast/sunny/rainy): ").lower() or "clear"
     duration = input("Enter duration in minutes (default 30): ") or "30"
-    
-    # Ask about camera type
-    camera_choice = input("Use webcam? (y/n, default y): ").lower() or "y"
-    use_webcam = camera_choice in ['y', 'yes', '1', 'true']
     
     # Ask about UI display
     ui_choice = input("Show UI display? (y/n, default y): ").lower() or "y"
@@ -460,7 +409,7 @@ def main():
         duration = 30
     
     # Initialize controller
-    controller = DroneHeightController(crop_type, weather, use_webcam, show_ui)
+    controller = DroneHeightController(crop_type, weather, show_ui)
     
     # Run controller
     controller.run_controller(duration)

@@ -1,7 +1,7 @@
 #!/bin/bash
 
-echo "🚁 Drone Height Controller for Raspberry Pi"
-echo "=========================================="
+echo "🚁 Drone Height Controller for Raspberry Pi (USB Webcam)"
+echo "======================================================"
 
 # Check if running on Raspberry Pi
 if ! grep -q "Raspberry Pi" /proc/cpuinfo; then
@@ -20,7 +20,7 @@ install_dependencies() {
     # Update system
     sudo apt update -y
     
-    # Install system packages
+    # Install system packages for webcam support
     sudo apt-get install -y \
         python3-pip \
         python3-dev \
@@ -46,36 +46,46 @@ install_dependencies() {
         libtiff-dev \
         gfortran \
         python3-setuptools \
-        python3-wheel
+        python3-wheel \
+        v4l-utils \
+        fswebcam
     
     # Install Python packages
     pip3 install --upgrade pip
     pip3 install numpy opencv-python-headless Pillow
     
-    # Try to install PiCamera2
-    pip3 install picamera2
-    
     echo "✅ Dependencies installed"
 }
 
-# Function to test camera
-test_camera() {
-    echo "📷 Testing camera..."
+# Function to test webcam
+test_webcam() {
+    echo "📷 Testing webcam..."
     
-    if command -v raspistill &> /dev/null; then
-        echo "Testing Pi Camera..."
-        raspistill -o test_camera.jpg -t 1000
-        if [ -f "test_camera.jpg" ]; then
-            echo "✅ Camera test successful"
-            rm test_camera.jpg
-            return 0
+    # Check if webcam is detected
+    if ls /dev/video* 2>/dev/null; then
+        echo "✅ Webcam devices found:"
+        ls /dev/video*
+        
+        # Test webcam with fswebcam
+        if command -v fswebcam &> /dev/null; then
+            echo "Testing webcam capture..."
+            fswebcam --no-banner test_webcam.jpg
+            if [ -f "test_webcam.jpg" ]; then
+                echo "✅ Webcam test successful"
+                rm test_webcam.jpg
+                return 0
+            else
+                echo "❌ Webcam test failed"
+                return 1
+            fi
         else
-            echo "❌ Camera test failed"
-            return 1
+            echo "⚠️  fswebcam not available, skipping webcam test"
+            return 0
         fi
     else
-        echo "⚠️  raspistill not found, skipping camera test"
-        return 0
+        echo "❌ No webcam devices found"
+        echo "Please check webcam connection and try again"
+        return 1
     fi
 }
 
@@ -86,12 +96,21 @@ test_python() {
     python3 -c "import cv2; print('✅ OpenCV version:', cv2.__version__)" || return 1
     python3 -c "import numpy; print('✅ NumPy version:', numpy.__version__)" || return 1
     
+    # Test webcam with OpenCV
+    echo "Testing OpenCV webcam access..."
     python3 -c "
-try:
-    from picamera2 import Picamera2
-    print('✅ PiCamera2 installed successfully')
-except ImportError:
-    print('⚠️  PiCamera2 not available, will use OpenCV camera')
+import cv2
+cap = cv2.VideoCapture(0)
+if cap.isOpened():
+    print('✅ OpenCV can access webcam')
+    ret, frame = cap.read()
+    if ret:
+        print(f'✅ Webcam resolution: {frame.shape[1]}x{frame.shape[0]}')
+    else:
+        print('⚠️  Webcam found but cannot capture frame')
+    cap.release()
+else:
+    print('❌ OpenCV cannot access webcam')
 "
     
     return 0
@@ -116,6 +135,28 @@ run_controller() {
     python3 drone_height_controller.py
 }
 
+# Function to show webcam info
+show_webcam_info() {
+    echo "📷 Webcam Information:"
+    echo "====================="
+    
+    # List video devices
+    if ls /dev/video* 2>/dev/null; then
+        echo ""
+        echo "Available video devices:"
+        ls -la /dev/video*
+        
+        # Show webcam capabilities
+        if command -v v4l2-ctl &> /dev/null; then
+            echo ""
+            echo "Webcam capabilities:"
+            v4l2-ctl --list-devices 2>/dev/null || echo "v4l2-ctl not available"
+        fi
+    else
+        echo "No webcam devices found"
+    fi
+}
+
 # Main execution
 main() {
     # Check if dependencies are already installed
@@ -126,9 +167,13 @@ main() {
         echo "✅ Dependencies already installed"
     fi
     
-    # Test camera
-    if ! test_camera; then
-        echo "⚠️  Camera test failed, but continuing..."
+    # Show webcam info
+    show_webcam_info
+    
+    # Test webcam
+    if ! test_webcam; then
+        echo "⚠️  Webcam test failed, but continuing..."
+        echo "You can still try running the controller manually"
     fi
     
     # Test Python
@@ -139,8 +184,14 @@ main() {
     
     echo ""
     echo "🎯 Ready to run!"
-    echo "The controller will provide real-time height commands for your drone."
+    echo "The controller will use your USB webcam to provide real-time height commands for your drone."
     echo "Commands are saved to 'drone_height_commands.json'"
+    echo ""
+    echo "📝 Notes:"
+    echo "  - Make sure your USB webcam is connected and working"
+    echo "  - Point the webcam at your crop field"
+    echo "  - The system will analyze footage and provide height commands"
+    echo "  - Visual UI shows real-time analysis overlay"
     echo ""
     
     # Run the controller
