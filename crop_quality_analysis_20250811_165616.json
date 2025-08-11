@@ -1,0 +1,59 @@
+{
+  "timestamp": "2025-08-11T16:56:16.819357",
+  "frame_count": 0,
+  "crop_type": "wheat",
+  "weather_condition": "clear",
+  "quality_score": 25.5,
+  "priority": 3,
+  "analysis": {
+    "brightness": [
+      "Too Dark",
+      0.0029562114197530863
+    ],
+    "contrast": [
+      "Low Contrast",
+      0.38380976232184044
+    ],
+    "sharpness": [
+      "Blurry",
+      0.2810698150042906
+    ],
+    "green_coverage": [
+      "Low Crop Coverage",
+      0.0
+    ],
+    "texture_variance": [
+      "Low Texture Detail",
+      0.039293999547134154
+    ],
+    "focus": [
+      7.192195789002485,
+      7.192195789002485
+    ],
+    "noise": [
+      "Low Noise",
+      0.0013223379629629629
+    ],
+    "crop_health": [
+      "Poor Health",
+      0.0
+    ]
+  },
+  "feedback": [
+    "Optimal height: 3.0m",
+    "Decrease altitude by 0.5-1.0m for better lighting",
+    "Decrease altitude by 1.0-1.5m for sharper crop details",
+    "Adjust camera angle or move closer to focus on crop field",
+    "Decrease altitude by 0.5-1.0m for better crop detail detection",
+    "Focus on this area for detailed disease monitoring"
+  ],
+  "recommendations": {
+    "priority": 3,
+    "actions": [
+      {
+        "command": "immediate_adjustment",
+        "reason": "Critical quality issues"
+      }
+    ]
+  }
+}

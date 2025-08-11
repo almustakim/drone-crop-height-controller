@@ -1,16 +1,16 @@
-# Crop Field Quality Analysis for Drone Monitoring
+# Clean Image Quality Analysis for Crop Monitoring
 
-This script provides advanced image quality analysis for drone-based crop field monitoring, specifically designed to optimize footage quality for disease detection and crop health assessment.
+A simple, efficient image quality analysis system for drone-based crop field monitoring, designed to work on both desktop computers and Raspberry Pi devices.
 
-## Features
+## ✨ Features
 
 ### 🎯 **Crop-Specific Analysis**
-- **Multiple crop types**: Wheat, corn, rice, cotton, soybeans, and general
+- **Multiple crop types**: Wheat, corn, rice, cotton, and general
 - **Dynamic thresholds**: Automatically adjusts based on crop characteristics
 - **Optimal height recommendations**: Crop-specific altitude suggestions
 
 ### 🌤️ **Weather Adaptation**
-- **Weather condition detection**: Clear, cloudy, overcast, sunny, rainy
+- **Weather condition detection**: Clear, cloudy, overcast, sunny
 - **Dynamic threshold adjustment**: Adapts analysis parameters to lighting conditions
 - **Real-time optimization**: Continuously adjusts for changing weather
 
@@ -22,6 +22,7 @@ This script provides advanced image quality analysis for drone-based crop field 
 - **Texture variance**: Important for disease detection
 - **Focus analysis**: Frequency domain analysis for optimal focus
 - **Noise assessment**: Image noise level evaluation
+- **Crop health analysis**: Color-based health assessment
 
 ### 🚁 **Precise Drone Control Recommendations**
 - **Priority-based feedback**: 0-3 priority levels for efficient adjustments
@@ -34,79 +35,90 @@ This script provides advanced image quality analysis for drone-based crop field 
 - **Real-time monitoring**: Live quality assessment
 - **Historical tracking**: Quality trend analysis
 
-## Installation
+## 🖥️ **Compatibility**
 
-1. **Install dependencies**:
+- **Desktop Computers**: Windows, macOS, Linux
+- **Raspberry Pi**: Pi 3, Pi 4, Pi Zero (with camera module)
+- **Python**: 3.7 or higher
+- **Camera**: USB webcam, Pi Camera, or any OpenCV-compatible camera
+
+## 📋 **Requirements**
+
+- Python 3.7 or higher
+- OpenCV 4.5.0+
+- NumPy 1.21.0+
+- Pillow 8.0.0+
+
+## 🛠️ **Installation**
+
+### Quick Setup
 ```bash
+# Install dependencies
 pip install -r requirements.txt
-```
 
-2. **For Raspberry Pi with Pi Camera**:
-```bash
-sudo apt-get update
-sudo apt-get install python3-opencv
-sudo apt-get install libatlas-base-dev
-```
-
-## Usage
-
-### Basic Usage
-```bash
+# Run the analyzer
 python imgquality.py
 ```
 
-### Advanced Usage with Configuration
+### Raspberry Pi Setup
+```bash
+# On Raspberry Pi
+sudo apt-get update
+sudo apt-get install python3-opencv python3-pip
+pip3 install -r requirements.txt
+
+# Run with Pi Camera
+python3 imgquality.py
+```
+
+## 🎯 **Usage**
+
+### Basic Usage
 ```python
 from imgquality import CropFieldQualityAnalyzer
 
-# Initialize with specific crop and weather
+# Initialize analyzer
 analyzer = CropFieldQualityAnalyzer(
-    crop_type="wheat", 
-    weather_condition="cloudy"
+    crop_type="wheat",
+    weather_condition="clear"
 )
 
-# Analyze a frame
+# Analyze frame quality
 analysis = analyzer.analyze_frame_quality(frame)
+
+# Get drone positioning feedback
 feedback, priority, adjustments = analyzer.get_drone_position_feedback(analysis)
+
+# Calculate overall quality score
 quality_score = analyzer.calculate_overall_quality_score(analysis)
 ```
 
-### Configuration File
-Edit `config.json` to customize:
-- Camera settings
-- Crop type parameters
-- Weather conditions
-- Drone control preferences
-- Output settings
+### Command Line Usage
+```bash
+# Run with default settings
+python imgquality.py
 
-## Key Improvements
+# Run with specific crop type
+python imgquality.py --crop wheat --weather cloudy
+```
 
-### 1. **Enhanced Sharpness Analysis**
-- **Combined methods**: Laplacian variance + Sobel edge detection
-- **Crop-specific sensitivity**: Different thresholds for different crops
-- **Frequency domain analysis**: FFT-based focus assessment
+## 🔧 **Configuration**
 
-### 2. **Intelligent Drone Positioning**
-- **Precise altitude recommendations**: Exact meter adjustments
-- **Priority-based system**: Efficient flight path optimization
-- **Weather-aware adjustments**: Dynamic recommendations based on conditions
+### Crop Types
+Each crop type has optimized parameters:
 
-### 3. **Crop-Specific Optimization**
-- **Green range adaptation**: Different color ranges for different crops
-- **Texture sensitivity**: Crop-specific detail detection
-- **Optimal height mapping**: Crop-specific altitude recommendations
+- **Wheat**: High detail sensitivity, optimal at 3.0m height
+- **Corn**: Medium sensitivity, optimal at 4.0m height  
+- **Rice**: High detail sensitivity, optimal at 2.5m height
+- **Cotton**: Medium sensitivity, optimal at 3.5m height
 
-### 4. **Weather Condition Adaptation**
-- **Dynamic thresholds**: Automatic adjustment for lighting conditions
-- **Multiple weather types**: Clear, cloudy, overcast, sunny, rainy
-- **Real-time optimization**: Continuous parameter adjustment
+### Weather Conditions
+- **Clear**: Standard thresholds
+- **Cloudy**: Reduced brightness, increased contrast
+- **Overcast**: Further reduced brightness, increased contrast
+- **Sunny**: Increased brightness, reduced contrast
 
-### 5. **Integration-Ready Output**
-- **JSON logging**: Structured data for drone control systems
-- **Command generation**: Ready-to-use drone instructions
-- **Priority system**: Efficient decision making
-
-## Output Format
+## 📊 **Output Format**
 
 ### Analysis Results
 ```json
@@ -118,26 +130,15 @@ Edit `config.json` to customize:
   "quality_score": 85.5,
   "priority": 1,
   "analysis": {
-    "brightness": ("Optimal Brightness", 125.3),
-    "contrast": ("Good Contrast", 45.2),
-    "sharpness": ("Good Sharpness", 120.8),
-    "green_coverage": ("Good Crop Coverage", 0.65),
-    "texture_variance": ("Good Texture Detail", 85.4),
-    "focus": ("Good Focus", 12.3),
-    "noise": ("Low Noise", 3.2)
+    "brightness": ["Optimal Brightness", 125.3],
+    "contrast": ["Good Contrast", 45.2],
+    "sharpness": ["Good Sharpness", 120.8],
+    "green_coverage": ["Good Crop Coverage", 0.65],
+    "crop_health": ["Excellent Health", 0.85]
   },
   "feedback": [
     "Decrease altitude by 0.5-1.0m for better crop detail detection"
-  ],
-  "recommendations": {
-    "priority": 1,
-    "actions": [
-      {
-        "command": "gradual_adjustment",
-        "reason": "Moderate quality issues"
-      }
-    ]
-  }
+  ]
 }
 ```
 
@@ -147,54 +148,71 @@ Edit `config.json` to customize:
 - **Priority 2**: Gradual adjustments (moderate issues)
 - **Priority 3**: Immediate adjustments (critical issues)
 
-## Integration with Drone Control System
+## 🎮 **Drone Integration**
 
-The script generates structured JSON output that can be easily integrated with your drone control system:
+The system generates structured JSON output that can be easily integrated with your drone control system:
 
 1. **Read analysis logs**: Parse JSON files for quality data
 2. **Execute commands**: Use generated drone control commands
 3. **Monitor quality**: Track quality scores over time
 4. **Optimize flight paths**: Use priority system for efficient navigation
 
-## Customization
+## 📁 **File Structure**
 
-### Adding New Crop Types
-Edit `config.json` to add new crop types:
-```json
-"new_crop": {
-  "green_range": [35, 50, 50, 85, 255, 255],
-  "texture_sensitivity": 1.0,
-  "detail_importance": "medium",
-  "optimal_height": 3.0,
-  "min_resolution": 0.5
-}
+```
+ImgQuality/
+├── imgquality.py              # Main analyzer
+├── requirements.txt           # Dependencies
+├── README.md                 # This file
+└── venv/                     # Virtual environment (optional)
 ```
 
-### Adjusting Quality Thresholds
-Modify thresholds in the configuration file based on your specific requirements and field conditions.
-
-## Performance Optimization
-
-- **Frame skipping**: Adjust `analysis_interval` in config
-- **Resolution reduction**: Lower frame resolution for faster processing
-- **Selective analysis**: Focus on specific quality metrics
-
-## Troubleshooting
+## 🚨 **Troubleshooting**
 
 ### Common Issues
-1. **Camera not detected**: Check camera index in config
-2. **Low quality scores**: Adjust thresholds for your specific conditions
-3. **High noise levels**: Check camera settings and lighting
+
+1. **Camera not detected**
+   ```bash
+   # Check camera index
+   ls /dev/video*
+   # Adjust camera index in code if needed
+   ```
+
+2. **Low quality scores**
+   - Adjust thresholds in configuration
+   - Check lighting conditions
+   - Verify camera focus
+
+3. **Performance issues on Pi**
+   - Reduce frame resolution
+   - Increase frame skip interval
+   - Monitor CPU temperature
 
 ### Raspberry Pi Optimization
-- Use `picamera` library for better Pi Camera integration
-- Adjust frame resolution for performance
-- Monitor CPU usage during operation
 
-## License
+- Use Pi Camera Module for better performance
+- Monitor temperature: `vcgencmd measure_temp`
+- Consider using a heatsink for extended operation
+- Use `sudo raspi-config` to enable camera interface
 
-This project is open source and available under the MIT License.
+## 🤝 **Contributing**
 
-## Contributing
+1. Fork the repository
+2. Create a feature branch
+3. Make your changes
+4. Test thoroughly
+5. Submit a pull request
 
-Contributions are welcome! Please feel free to submit pull requests or open issues for improvements and bug fixes. 
+## 📄 **License**
+
+This project is licensed under the MIT License - see the LICENSE file for details.
+
+## 🙏 **Acknowledgments**
+
+- **OpenCV** for computer vision capabilities
+- **NumPy** for numerical computing
+- **Pillow** for image processing
+
+---
+
+**Note**: This system is designed to be lightweight and efficient, making it suitable for both desktop and embedded applications like Raspberry Pi. 

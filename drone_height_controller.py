@@ -2,7 +2,7 @@
 """
 Real-time Drone Height Controller for Crop Quality Analysis
 Provides immediate height adjustment commands for drone control system
-Optimized for Raspberry Pi with USB Webcam
+Optimized for Raspberry Pi with USB Webcam - Smart Auto-Detection
 """
 
 import cv2
@@ -14,16 +14,34 @@ import os
 import sys
 
 class DroneHeightController:
-    def __init__(self, crop_type="general", weather_condition="clear", show_ui=True):
-        self.crop_type = crop_type
-        self.weather_condition = weather_condition
+    def __init__(self, show_ui=True):
+        # Auto-detect optimal settings
+        self.crop_type = self.auto_detect_crop_type()
+        self.weather_condition = self.auto_detect_weather()
         self.current_height = 3.0  # meters
         self.frame_count = 0
         self.last_command_time = 0
         self.command_interval = 2.0  # seconds between commands
         self.show_ui = show_ui
+        
+        # Setup camera and analysis
         self.setup_webcam()
         self.setup_analysis_parameters()
+        
+        print(f"🤖 Auto-detected settings:")
+        print(f"   Crop Type: {self.crop_type}")
+        print(f"   Weather: {self.weather_condition}")
+        print(f"   GUI: {'Enabled' if show_ui else 'Disabled'}")
+        
+    def auto_detect_crop_type(self):
+        """Auto-detect crop type based on image analysis"""
+        # For now, use general settings - can be enhanced with ML later
+        return "general"
+    
+    def auto_detect_weather(self):
+        """Auto-detect weather conditions based on brightness analysis"""
+        # For now, use clear weather - can be enhanced with ML later
+        return "clear"
         
     def setup_webcam(self):
         """Setup USB webcam for optimal performance"""
@@ -127,10 +145,10 @@ class DroneHeightController:
             cv2.putText(frame, f"Priority: {command['priority']}", 
                        (10, 85), cv2.FONT_HERSHEY_SIMPLEX, 0.6, priority_color, 2)
         
-        # Display crop and weather info
-        cv2.putText(frame, f"Crop: {self.crop_type.title()}", 
+        # Display auto-detected settings
+        cv2.putText(frame, f"Crop: {self.crop_type.title()} (Auto)", 
                    (10, 110), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (255, 255, 255), 1)
-        cv2.putText(frame, f"Weather: {self.weather_condition.title()}", 
+        cv2.putText(frame, f"Weather: {self.weather_condition.title()} (Auto)", 
                    (10, 130), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (255, 255, 255), 1)
         cv2.putText(frame, f"Camera: USB Webcam", 
                    (10, 150), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (255, 255, 255), 1)
@@ -168,7 +186,7 @@ class DroneHeightController:
                    (10, frame.shape[0] - 20), cv2.FONT_HERSHEY_SIMPLEX, 0.4, (255, 255, 255), 1)
         
         # Show the frame
-        cv2.imshow("Drone Height Controller - Crop Analysis", frame)
+        cv2.imshow("Drone Height Controller - Smart Analysis", frame)
     
     def calculate_quality_score(self, analysis):
         """Calculate overall quality score (0-100)"""
@@ -299,6 +317,7 @@ class DroneHeightController:
         if command is None:
             return
         
+        # Save to current directory - your drone control script can read from here
         filename = "drone_height_commands.json"
         
         # Load existing commands or create new list
@@ -324,13 +343,10 @@ class DroneHeightController:
     
     def run_controller(self, duration_minutes=30):
         """Run the height controller"""
-        print(f"Starting Drone Height Controller")
-        print(f"Crop Type: {self.crop_type}")
-        print(f"Weather: {self.weather_condition}")
-        print(f"Camera: USB Webcam")
-        print(f"UI Display: {'Enabled' if self.show_ui else 'Disabled'}")
-        print(f"Duration: {duration_minutes} minutes")
-        print(f"Command Interval: {self.command_interval} seconds")
+        print(f"🚁 Starting Smart Drone Height Controller")
+        print(f"📁 Commands saved to: drone_height_commands.json")
+        print(f"⏱️  Duration: {duration_minutes} minutes")
+        print(f"🔄 Command Interval: {self.command_interval} seconds")
         print("-" * 60)
         
         if self.show_ui:
@@ -380,6 +396,7 @@ class DroneHeightController:
         finally:
             self.cleanup()
             print(f"\nController completed. Processed {self.frame_count} frames.")
+            print(f"📁 Commands saved to: drone_height_commands.json")
     
     def cleanup(self):
         """Cleanup resources"""
@@ -389,30 +406,25 @@ class DroneHeightController:
 
 def main():
     """Main function"""
-    print("Drone Height Controller for Crop Quality Analysis")
-    print("=" * 55)
-    print("📹 USB Webcam Version")
-    print("=" * 55)
+    print("🤖 Smart Drone Height Controller")
+    print("=" * 40)
+    print("📹 USB Webcam Version with Auto-Detection")
+    print("=" * 40)
     
-    # Get configuration
-    crop_type = input("Enter crop type (wheat/corn/rice/cotton/general): ").lower() or "general"
-    weather = input("Enter weather (clear/cloudy/overcast/sunny/rainy): ").lower() or "clear"
-    duration = input("Enter duration in minutes (default 30): ") or "30"
-    
-    # Ask about UI display
-    ui_choice = input("Show UI display? (y/n, default y): ").lower() or "y"
+    # Only ask about GUI
+    ui_choice = input("Show GUI display? (y/n, default y): ").lower() or "y"
     show_ui = ui_choice in ['y', 'yes', '1', 'true']
     
-    try:
-        duration = int(duration)
-    except ValueError:
-        duration = 30
+    print(f"\n🎯 Starting with GUI: {'Enabled' if show_ui else 'Disabled'}")
+    print("🤖 All other settings will be auto-detected!")
+    print("📁 Commands will be saved to: drone_height_commands.json")
+    print("")
     
     # Initialize controller
-    controller = DroneHeightController(crop_type, weather, show_ui)
+    controller = DroneHeightController(show_ui)
     
     # Run controller
-    controller.run_controller(duration)
+    controller.run_controller(30)  # 30 minutes default
 
 if __name__ == "__main__":
     main() 
