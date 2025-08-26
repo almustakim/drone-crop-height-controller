@@ -1,0 +1,57 @@
+{
+  "timestamp": "2025-08-19T16:26:36.926829",
+  "frame_count": 8,
+  "crop_type": "general",
+  "weather_condition": "clear",
+  "quality_score": 41.7187198591821,
+  "priority": 3,
+  "analysis": {
+    "brightness": [
+      "Optimal Brightness",
+      136.7153158757716
+    ],
+    "contrast": [
+      "High Contrast",
+      74.04285962032893
+    ],
+    "sharpness": [
+      "Blurry",
+      22.99181285567887
+    ],
+    "green_coverage": [
+      "Low Crop Coverage",
+      0.01976466049382716
+    ],
+    "texture_variance": [
+      "Low Texture Detail",
+      2.550327129245754
+    ],
+    "focus": [
+      11.735327407478584,
+      11.735327407478584
+    ],
+    "noise": [
+      "Low Noise",
+      0.43711612654320986
+    ],
+    "crop_health": [
+      "Poor Health",
+      0.028748794367283947
+    ]
+  },
+  "feedback": [
+    "Decrease altitude by 1.0-1.5m for sharper crop details",
+    "Adjust camera angle or move closer to focus on crop field",
+    "Decrease altitude by 0.5-1.0m for better crop detail detection",
+    "Focus on this area for detailed disease monitoring"
+  ],
+  "recommendations": {
+    "priority": 3,
+    "actions": [
+      {
+        "command": "immediate_adjustment",
+        "reason": "Critical quality issues"
+      }
+    ]
+  }
+}
